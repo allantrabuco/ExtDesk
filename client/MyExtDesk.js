@@ -6,7 +6,8 @@
 				{name: 'name', type: 'string'},
 				{name: 'wallPaper', type: 'string'},
 				{name: 'wallpaperStretch', type: 'boolean'},
-				{name: 'theme', type: 'string'}
+				{name: 'theme', type: 'string'},
+				{name: 'color', type: 'string'}
 			],
 			proxy: {
 				type: 'rest',
@@ -54,7 +55,7 @@
 		});
 
 		Ext.define('MyDesktop.MyExtDesk', {
-				
+
 				user : 'User',
 			
 				load : function(){
@@ -64,7 +65,7 @@
 							this.user=user;
 							//***<load personal theme :D>
 							var getPath = location.href.substring(0,location.href.lastIndexOf("/")+1);
-							Ext.getDom('idTheme').href= getPath + "extjs/resources/css/ext-all-"+this.user.get('theme')+".css";
+							//Ext.getDom('idTheme').href= getPath + "extjs/resources/css/ext-all-"+this.user.get('theme')+".css";
 							//***<(8D>
 							apps.push('Ext.window.MessageBox');
 							apps.push('Ext.ux.desktop.ShortcutModel');							
@@ -90,10 +91,7 @@
 				login : function(e,c){
 
 					var jsonData=c.request.scope.reader.jsonData;				    
-				    
-				    //console.log(jsonData.success==false &&jsonData.error==1);
-				    
-				    
+		    
 				    if (jsonData.success==false &&jsonData.error==1){
 							//console.log(jsonData);
 							//console.log(window);
@@ -117,66 +115,67 @@
 							lan["bad_login"]= strings[9].string;
 	
 						
-							var form = Ext.create('Ext.form.Panel', {
-								layout: 'absolute',
-								url: 'ExtDesk.php?Module=Main&action=load_user',
-								defaultType: 'textfield',
-								border: false,
-								defaults:{
-								  enableKeyEvents:true,
-								  listeners:{
-									specialKey: function(field, el)
-									{
-									  if(el.getKey() == Ext.EventObject.ENTER)
-									  {
-										Ext.getCmp('btnEnter').handler.call(Ext.getCmp('btnEnter').scope);
-									  }
+                var form = Ext.create('Ext.form.Panel', {
+                    //layout: 'absolute',
+                    url: 'ExtDesk.php?Module=Main&action=load_user',
+                    defaultType: 'textfield',
+                    border: false,
+                    layout:'auto',
+                    region: 'center',
+                    bodyPadding: 10,
+                    defaults:{
+                        fieldWidth: 60,
+                        enableKeyEvents:true,
+                        listeners:{
+                            specialKey: function(field, el)
+                            {
+                                if(el.getKey() == Ext.EventObject.ENTER)
+                                {
+                                    Ext.getCmp('btnEnter').handler.call(Ext.getCmp('btnEnter').scope);
+                                }
+                            }
+                        }
+                    },
+                    //bodyStyle: "background-image:url(blue.jpg) !important",
+                    items: [
+                    {
+                        id:"idLoginUser",
+                        fieldLabel: lan["user"],
+                        msgTarget: 'side',
+                        allowBlank: false,
+                        name: 'user',
+                        listeners: {
+							change: function(a) {
+								//console.log(a.value);
+									x=Ext.get('img-avatar')
+									if (x!=null){
+										Ext.get('img-avatar').set({src: "resources/images/avatars/"+a.value+".png"});  
 									}
-								  }
-								},
-								//bodyStyle: "background-image:url(blue.jpg) !important",
-								items: [
-									{
-										id:"idLoginUser",
-										fieldLabel: lan["user"],
-										fieldWidth: 60,
-										msgTarget: 'side',
-										allowBlank: false,
-										x: 5,
-										y: 5,
-										name: 'user',
-										anchor: '-5'
-									},
-									{
-										id:"idLoginPswd",
-										inputType: 'password',
-										fieldLabel: lan["pswd"],
-										fieldWidth: 60,
-										x: 5,
-										y: 35,
-										name: 'password',
-										anchor: '-5'
-									},
-									{
-										id: 'idRememberUser',
-										xtype: 'checkboxfield',		
-										name: 'recordarUsuario',
-										x: 110,
-										y: 55,								
-										hideLabel: true,
-										style: 'margin-top:15px',
-										boxLabel: lan["r_user"]
-									},
-									{
-										id: 'idRememberPswd',
-										xtype: 'checkboxfield',		
-										name: 'recordarUsuario',
-										x: 110,
-										y: 85,								
-										hideLabel: true,
-										style: 'margin-top:15px',
-										boxLabel: lan["r_psd"]
-									}
+							}  
+						}     
+                    },
+                    {
+                        id:"idLoginPswd",
+                        inputType: 'password',
+                        fieldLabel: lan["pswd"],
+                        name: 'password'
+                    },
+                    {
+                        id: 'idRememberUser',
+                        xtype: 'checkboxfield',		
+                        name: 'recordarUsuario',
+                        boxLabel: lan["r_user"],
+                        hideLabel: true,                        
+                        style: 'margin-left:105px;margin-top:8px;'
+                    },
+                    {
+                        id: 'idRememberPswd',
+                        xtype: 'checkboxfield',		
+                        name: 'recordarUsuario',
+                        boxLabel: lan["r_psd"],
+                        hideLabel: true,                         
+                        style: 'margin-left:105px;margin-top:8px;'
+                    }
 								
 								]
 							});
@@ -184,14 +183,23 @@
 							var win = Ext.create('Ext.window.Window', {
 								id : 'idWinLogin',
 								title: lan["login"],
-								width: 350,
-								height: 200,
-								minWidth: 350,
-								minHeight:200,
-								layout: 'fit',
+								width: 450,
+								height: 215,
+								minWidth: 450,
+								minHeight:215,
+								layout: 'border',
 								plain:true,
 								closable:false,
-								items: form,
+								items: [
+									{
+										xtype: 'panel',
+										region: 'west',
+										width: 155,
+										bodyPadding: 12,
+										html: '<img src="resources/images/avatars/extdesklogo.png" id="img-avatar"/>'
+									},
+									form
+								],								
 			
 								buttons: [{
 									id: 'btnEnter',
@@ -216,9 +224,16 @@
 												MyExtDesk.load();
 											
 											},
-											failure: function(form, action) {
+											failure: function(form, action,a,b,c) {
+												//console.log(action.result.error);
 												
-												Ext.Msg.confirm(lan["error"],lan["bad_login"],
+												if (action.result.error==0){
+													error=action.result.msg;
+												}else{
+													error=lan["bad_login"];
+												}
+												
+												Ext.Msg.confirm(lan["error"],error,
 													function(btn, text){
 													if (btn == 'yes'){
 														Ext.getCmp('idLoginUser').setValue("");
@@ -260,7 +275,9 @@
 						}
 	
 						win.show();
-									
+						if (Ext.util.Cookies.get("rem_user")!=null){
+							Ext.get('img-avatar').set({src: "resources/images/avatars/"+Ext.util.Cookies.get('rem_user')+".png"});
+						}
 
 							
 							

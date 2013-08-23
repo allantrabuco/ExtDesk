@@ -7,11 +7,11 @@ class modules {
 
     function __construct() {
         //var_dump($_SESSION);
-        $server   = _DB_HOST;
-        $driver   = _DB_DRIVER;
-        $user     = _DB_USER;
+        $server = _DB_HOST;
+        $driver = _DB_DRIVER;
+        $user = _DB_USER;
         $password = _DB_PASSWORD;
-        $dbname   = _DB_NAME;
+        $dbname = _DB_NAME;
         $dsn = "$driver:dbname=$dbname;host=$server";
 
         try {
@@ -74,41 +74,66 @@ class modules {
         $user = $_SESSION["ExtDeskSession"]["username"];
         $id = $_SESSION["ExtDeskSession"]["id"];
 
+        $module = null;
+        $option = null;
+        $action = null;
+        
+        if (isset($_GET["Module"])) { 
+            $module = $_GET["Module"]; 
+        }
+        if (isset($_GET["option"])) { 
+            $option = $_GET["option"]; 
+        }
+        if (isset($_GET["action"])) { 
+            $action = $_GET["action"]; 
+        }
+        
+        if (isset($_POST["Module"])) { 
+            $module = $_POST["Module"]; 
+        }
+        if (isset($_POST["option"])) { 
+            $option = $_POST["option"]; 
+        }
+        if (isset($_POST["action"])) { 
+            $action = $_POST["action"]; 
+        }
+            
+        $sql = "select a.module, 
+                       a.option, 
+                       a.action,
+                       ug.idGroup,
+                       u.p_id
+                  from groups_actions ga, 
+                       actions a, 
+                       user_groups 
+                       ug,modules m,
+                       groups g,
+                       users u
+                 where a.id=ga.idActions 
+                   and ug.idGroup=ga.idGroups 
+                   and m.js=a.module 
+                   and ga.idgroups=g.id
+                   and ug.idUser=u.p_id
+                   and g.active=1 
+                   and u.active=1
+                   and u.P_id=$id
+                   and a.module='$module'
+                   and a.option='$option'
+                   and a.action='$action'
+                 order by m.id";
 
-        $module = $_GET["Module"];
-        $option = $_GET["option"];
-        $action = $_GET["action"];
-
-        $sql = "select a.module, a.`option`, a.action,ug.idGroup,u.p_id
-				from 
-				groups_actions ga, 
-				actions a, 
-				user_groups 
-				ug,modules m,
-				groups g,
-				users u
-				where
-				a.id=ga.idActions and ug.idGroup=ga.idGroups and 
-				m.js=a.module and ga.idgroups=g.id and
-				ug.idUser=u.p_id
-				and g.active=1 
-				and u.active=1
-				and u.P_id=$id
-				and a.module='$module'
-				and a.`option`='$option'
-				and a.action='$action'
-				order by m.id
-			";
-
-
+/*        $d = new debug();
+		$d->log($sql);*/
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute();
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $log=new log();
         if (count($result) == 0) {
-            //$d->log("false");
+           $log->save($user,"Access denied to module",$module,$option,$action);
             return FALSE;
         } else {
-            //$d->log("true");
+            $log->save($user,"Granted access to the module",$module,$option,$action);
             return TRUE;
         }
     }
@@ -119,16 +144,20 @@ class modules {
         $wp = $_GET["p1"];
         $wp = str_replace("ico-", "", $wp);
         $stretch = ($_GET["p2"] == 'true') ? 1 : 0;
+        $color = ($_GET["p3"] == '') ? '#ffffff' : $_GET["p3"];
+
+        $_SESSION['ExtDeskSession']['color']=$color;
 
         // create de sql
         $sql = "UPDATE users 
 				SET 
 				wallPaper=:wp, 
-				wpStretch=:stretch
+				wpStretch=:stretch,
+                shorcutColor=:color
 				WHERE username=:user";
 
         $result = $this->dbh->prepare($sql);
-        if ($result->execute(array(':wp' => $wp, ':stretch' => $stretch, ':user' => $user))) {
+        if ($result->execute(array(':wp' => $wp, ':stretch' => $stretch, ':user' => $user,':color'=>$color))) {
             $res = TRUE;
         } else {
             $res = FALSE;

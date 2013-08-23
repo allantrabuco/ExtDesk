@@ -65,7 +65,8 @@ Ext.define('Ext.ux.desktop.TaskBar', {
                 iconCls: 'ux-start-button-icon',
                 menu: me.startMenu,
                 menuAlign: 'bl-tl',
-                text: me.startBtnText
+                text: me.startBtnText,
+                height:26
             },
             me.quickStart,
             {
@@ -97,7 +98,8 @@ Ext.define('Ext.ux.desktop.TaskBar', {
         var me = this, ret = {
             id : "id_quickLaunch",
             minWidth: 20,
-            width: 140,
+            //width: 140,
+            width: Ext.themeName === 'neptune' ? 160 : 140,
             items: [],
             enableOverflow: true
         };
@@ -105,7 +107,7 @@ Ext.define('Ext.ux.desktop.TaskBar', {
         Ext.each(this.quickStart, function (item) {
             ret.items.push({
                 tooltip: { text: item.name, align: 'bl-tl' },
-                tooltip: item.name,
+                //tooltip: item.name,
                 overflowText: item.name,
                 iconCls: item.iconCls,
                 module: item.module,
@@ -124,7 +126,7 @@ Ext.define('Ext.ux.desktop.TaskBar', {
      */
     getTrayConfig: function () {
         var ret = {
-            width: 80,
+            //	width: 80,
             items: this.trayItems
         };
         delete this.trayItems;
@@ -165,9 +167,18 @@ Ext.define('Ext.ux.desktop.TaskBar', {
         var win = btn.win;
 
         if (win.minimized || win.hidden) {
-            win.show();
+            //win.show();
+            btn.disable();
+            win.show(null, function() {
+                btn.enable();
+            });
         } else if (win.active) {
-            win.minimize();
+            //win.minimize();
+            btn.disable();
+            win.on('hide', function() {
+                btn.enable();
+            }, null, {single: true});
+
         } else {
             win.toFront();
         }

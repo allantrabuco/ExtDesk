@@ -3,6 +3,14 @@ ExtDesk
 
 A extended desktop to the web. (This is a work in progress....)
 
+Visit us on (http://www.extdesk.net)
+
+Follow us on facebook (http://www.facebook.com/Extdesk)
+
+Follow us on facebookgoogle+ (https://plus.google.com/u/0/111022226664150821629/)
+
+Just a small test of my github installation : xcape 
+
 License
 ------------
 Open Source License!

@@ -113,8 +113,9 @@ Ext.define('MyDesktop.Modules.Admin.Client.Admin', {			// 1.- Steep One define t
         /*** MODELS ***/        
         // model ImageAdmin
         if (! Ext.ClassManager.isCreated('ImageAdmin')) {
-            Ext.regModel('ImageAdmin', {
-                Fields: [
+            Ext.define('ImageAdmin', {
+                extend: 'Ext.data.Model',
+                fields: [
                 {
                     name : 'id', 	
                     type : 'string'
@@ -139,8 +140,8 @@ Ext.define('MyDesktop.Modules.Admin.Client.Admin', {			// 1.- Steep One define t
         }
 				
         // model AdminUsers
-        if (! Ext.ClassManager.isCreated('AdminUsers')) {
-            Ext.define('AdminUsers', {
+        if (! Ext.ClassManager.isCreated('AdminUsers_model')) {
+            Ext.define('AdminUsers_model', {
                 extend: 'Ext.data.Model',
                 fields: [
                 {
@@ -381,15 +382,15 @@ Ext.define('MyDesktop.Modules.Admin.Client.Admin', {			// 1.- Steep One define t
                 title : this.lang["userCaption"] ,	
                 caption : this.lang["userLegend"]
             },
-{
-                id : 'option1ex', 
+			{
+                id : 'option2ex', 
                 src:'modules/Admin/Client/Resources/images/modules_48x48.png', 	
                 title : this.lang["modulesCaption"],	
                 caption : this.lang["modulesLegend"]
                 },
 
                 {
-                id : 'option1ex', 
+                id : 'option3ex', 
                 src:'modules/Admin/Client/Resources/images/groups_48x48.png', 	
                 title : this.lang["groupsCaption"],	
                 caption : this.lang["groupsLegend"]
@@ -400,7 +401,7 @@ Ext.define('MyDesktop.Modules.Admin.Client.Admin', {			// 1.- Steep One define t
         // Store Users
         me.storeUsers = Ext.create('Ext.data.Store',{
             id : 'AdminUsers',
-            model : 'AdminUsers',
+            model : 'AdminUsers_model',
             autoLoad: false,
             proxy : {
                 type: 'ajax',
@@ -690,11 +691,13 @@ Ext.define('MyDesktop.Modules.Admin.Client.Admin', {			// 1.- Steep One define t
                             }
 				        	
                         }else{
-                            Ext.Msg.alert(module, this.lang["server_error"]+'<b>'+resp.msg+'</b>')
+                            store.rejectChanges();
+                            Ext.Msg.alert(module, me.lang["server_error"]+' <b>'+resp.msg+'</b>')
                         }			       		
                     }else{
+                        store.rejectChanges();
                         Ext.MessageBox.hide();
-                        Ext.Msg.alert(module, this.lang["server_error"])
+                        Ext.Msg.alert(module, me.lang["server_error"])
                     }		        
 			        			        
                 }
@@ -702,7 +705,7 @@ Ext.define('MyDesktop.Modules.Admin.Client.Admin', {			// 1.- Steep One define t
 			
         }else{
             Ext.MessageBox.hide();
-            Ext.Msg.alert(module, this.lang["no_changes"]);			
+            Ext.Msg.alert(module, me.lang["no_changes"]);			
         }
     	
     },
@@ -1000,7 +1003,7 @@ addUser : function(){
     	
     var me=this;
     	
-    var record = Ext.create('AdminUsers',{
+    var record = Ext.create('AdminUsers_model',{
         id : null,			
         username : '',
         password : '',
@@ -1204,12 +1207,13 @@ openModulesTab : function(opt){
                 title: this.lang["actions"],//'Acciones',
                 iconCls : 'icon-admin-actions',
                 layout:'fit',
-                width:'300',
+                width:'250',
                 region: 'east',
                 items:[
                 {
                     id : 'idAdminActionsGrid',
                     layout:'fit',
+                    width:300,
                     xtype: 'gridpanel',
                     store: me.storeActions,
                     plugins:[me.editorActions],
@@ -1249,6 +1253,7 @@ openModulesTab : function(opt){
                     ]
                 }
                 ],
+                
                 dockedItems: [
                 {
                     xtype: 'toolbar',
@@ -1285,6 +1290,7 @@ openModulesTab : function(opt){
                     ]
                 }
                 ]
+            
             /*** inserta aqui toolbar***/
             }
             ]
@@ -1295,7 +1301,9 @@ openModulesTab : function(opt){
         Ext.getCmp('idAdminModulesGrid').on('select',me.updateActions,this);
         //first obtain the module,who calls the update
         me.storeActions.on('beforeload',function(st){
-            var module=Ext.getCmp("idAdminModulesGrid").getSelectionModel().selected.items[0].data.name;
+	   //FIX: select data.js (by pixelead0)        	
+            //var module=Ext.getCmp("idAdminModulesGrid").getSelectionModel().selected.items[0].data.name;
+            var module=Ext.getCmp("idAdminModulesGrid").getSelectionModel().selected.items[0].data.js;
             st.proxy.extraParams.module=module;
         },this);
 			
@@ -1360,7 +1368,9 @@ saveActions : function(){
     
 addActions : function(){
     var me=this;
-    var module=Ext.getCmp("idAdminModulesGrid").getSelectionModel().selected.items[0].data.name;
+    //FIX: select data.js (by pixelead0)        	    
+    //var module=Ext.getCmp("idAdminModulesGrid").getSelectionModel().selected.items[0].data.name;
+    var module=Ext.getCmp("idAdminModulesGrid").getSelectionModel().selected.items[0].data.js;
     var record = Ext.create('AdminActions',{
         id : null,			
         module : module,
@@ -1377,7 +1387,9 @@ updateActions : function(){
     	
     var p=Ext.getCmp("idPanelActions");
     if (!p.collapsed){
-        var module=Ext.getCmp("idAdminModulesGrid").getSelectionModel().selected.items[0].data.name;
+    	//FIX: select data.js (by pixelead0)        	    
+        //var module=Ext.getCmp("idAdminModulesGrid").getSelectionModel().selected.items[0].data.name;
+        var module=Ext.getCmp("idAdminModulesGrid").getSelectionModel().selected.items[0].data.js;
         me.storeActions.load({
             params:{
                 "module":module
@@ -1639,9 +1651,10 @@ openGroupsTab: function(opt){
         });
 						
         var tab0 = Ext.getCmp('adminTabPanel');
-        var tab3 = Ext.getCmp('adminTab3');		
+        var tab3 = Ext.getCmp('adminTab3');	
+        tab0.add(tab3);	
     }
-    tab0.add(tab3);
+    
     tab3.show();
 },
 

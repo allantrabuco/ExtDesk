@@ -1,17 +1,3 @@
-/*
-
-This file is part of Ext JS 4
-
-Copyright (c) 2011 Sencha Inc
-
-Contact:  http://www.sencha.com/contact
-
-GNU General Public License Usage
-This file may be used under the terms of the GNU General Public License version 3.0 as published by the Free Software Foundation and appearing in the file LICENSE included in the packaging of this file.  Please review the following information to ensure the GNU General Public License version 3.0 requirements will be met: http://www.gnu.org/copyleft/gpl.html.
-
-If you are unsure which license is appropriate for your use, please contact the sales department at http://www.sencha.com/contact.
-
-*/
 /*!
  * Ext JS Library 4.0
  * Copyright(c) 2006-2011 Sencha Inc.
@@ -24,20 +10,19 @@ If you are unsure which license is appropriate for your use, please contact the 
  * @extends Ext.panel.Panel
  * <p>This class manages the wallpaper, shortcuts and taskbar.</p>
  */
+
 Ext.define('Ext.ux.desktop.Desktop', {
     extend: 'Ext.panel.Panel',
 
     alias: 'widget.desktop',
 
     uses: [
-        'Ext.util.MixedCollection',
-        'Ext.menu.Menu',
-        'Ext.view.View', // dataview
-        'Ext.window.Window',
-
-        'Ext.ux.desktop.TaskBar',
-        'Ext.ux.desktop.Wallpaper',
-        'Ext.ux.desktop.FitAllLayout'
+    'Ext.util.MixedCollection',
+    'Ext.menu.Menu',
+    'Ext.view.View', // dataview
+    'Ext.window.Window',
+    'Ext.ux.desktop.TaskBar',
+    'Ext.ux.desktop.Wallpaper'
     ],
 
     activeWindowCls: 'ux-desktop-active-win',
@@ -46,7 +31,7 @@ Ext.define('Ext.ux.desktop.Desktop', {
 
     border: false,
     html: '&#160;',
-    layout: 'fitall',
+    layout: 'fit',
 
     xTickSize: 1,
     yTickSize: 1,
@@ -75,15 +60,15 @@ Ext.define('Ext.ux.desktop.Desktop', {
      * {@link shortcutItemSelect} will probably also need to changed.
      */
     shortcutTpl: [
-        '<tpl for=".">',
-            '<div class="ux-desktop-shortcut" id="{name}-shortcut">',
-                '<div class="ux-desktop-shortcut-icon {iconCls}">',
-                    '<img src="',Ext.BLANK_IMAGE_URL,'" title="{name}">',
-                '</div>',
-                '<span class="ux-desktop-shortcut-text">{name}</span>',
-            '</div>',
-        '</tpl>',
-        '<div class="x-clear"></div>'
+    '<tpl for=".">',
+    '<div class="ux-desktop-shortcut" id="{name}-shortcut">',
+    '<div class="ux-desktop-shortcut-icon {iconCls}">',
+    '<img src="',Ext.BLANK_IMAGE_URL,'" title="{name}">',
+    '</div>',
+    '<span class="ux-desktop-shortcut-text">{name}</span>',
+    '</div>',
+    '</tpl>',
+    '<div class="x-clear"></div>'
     ],
 
     /**
@@ -109,61 +94,92 @@ Ext.define('Ext.ux.desktop.Desktop', {
         me.windows = new Ext.util.MixedCollection();
 
         me.contextMenu = new Ext.menu.Menu(me.createDesktopMenu());
-	
+
         me.items = [
-            { xtype: 'wallpaper', id: me.id+'_wallpaper' },
-            me.createDataView()
+        {
+            xtype: 'wallpaper', 
+            id: me.id+'_wallpaper'
+        },
+        me.createDataView()
         ];
 
         me.callParent();
 
+
         me.shortcutsView = me.items.getAt(1);
         me.shortcutsView.on('itemclick', me.onShortcutItemClick, me);
+        me.shortcutsView.on('viewready',function(){
+            //short-cut.color
+            color=userStore.data.color;
+            //put colors in labes of shortcut
+            var items =Ext.DomQuery.select('div .ux-desktop-shortcut-text');
+            Ext.each(items,function(item,i){
+                item.id = item.innerHTML;
+                Ext.fly(item.id).setStyle('color',color);
+            });
 
+        });
+
+        
         var wallpaper = me.wallpaper;
         me.wallpaper = me.items.getAt(0);
         if (wallpaper) {
             me.setWallpaper(wallpaper, me.wallpaperStretch);
         }
-    },
 
+        Ext.Ajax.on( {
+            beforerequest : function(){
+                Ext.getCmp('ajax_connect').addCls('ajax_connect');
+            },
+            requestcomplete : function(){
+                if(Ext.Object.getSize(Ext.Ajax.requests)<=1){
+                    Ext.getCmp('ajax_connect').removeCls('ajax_connect');
+                }
+            }
+        });
+		
+        Ext.getCmp("id_shortcut_dataview").on('viewready',me.resizeDesktop,me);
+        Ext.EventManager.onWindowResize(function () {
+            me.resizeDesktop();
+        },this);    
+		
+		
+    },
     afterRender: function () {
         var me = this;
         me.callParent();
         me.el.on('contextmenu', me.onDesktopMenu, me);
-        Ext.getCmp("id_shortcut_dataview").on('resize',me.resizeDesktop,me);    
         me.shortcuts.on('datachanged',me.resizeDesktop,me);
-	},
+    },
 	
-	resizeDesktop:function(){
-		/*
+    resizeDesktop:function(){
+        /*
 		 * this method update de icons location in desktop when resize de window
 		 */
 		
-		var dv = Ext.getCmp('id_shortcut_dataview');
-		var dv_w = dv.getWidth();
-		var dv_h = dv.getHeight();
-		var t=0;
-		var l=0;
-		var t_add=0;
-		Ext.getCmp('id_shortcut_dataview').getStore().each(function(r){
-			var id=r.data.name;
-			if (id!=undefined)
-			{
-				id=id+"-shortcut";
-				Ext.get(id).setTop(t);
-				Ext.get(id).setLeft(l);
-				t_add=Ext.get(id).getHeight();
-				t=t+84;
-				if (t+t_add>dv_h){
-					l=l+68;
-					t=0;
-				}
-			}	
-			},this);
+        var dv = Ext.getCmp('id_shortcut_dataview');
+        var dv_w = dv.getWidth();
+        var dv_h = dv.getHeight();
+        var t=0;
+        var l=0;
+        var t_add=0;
+        Ext.getCmp('id_shortcut_dataview').getStore().each(function(r){
+            var id=r.data.name;
+            if (id!=undefined)
+            {
+                id=id+"-shortcut";
+                Ext.get(id).setTop(t);
+                Ext.get(id).setLeft(l);
+                t_add=Ext.get(id).getHeight();
+                t=t+84;
+                if (t+t_add>dv_h){
+                    l=l+68;
+                    t=0;
+                }
+            }	
+        },this);
 
-	},
-
+    },
 
     //------------------------------------------------------
     // Overrideable configuration creation methods
@@ -177,6 +193,11 @@ Ext.define('Ext.ux.desktop.Desktop', {
             trackOver: true,
             itemSelector: me.shortcutItemSelector,
             store: me.shortcuts,
+            style: {
+                position: 'absolute'
+            },
+            x: 0, 
+            y: 0,
             tpl: new Ext.XTemplate(me.shortcutTpl)
         };
     },
@@ -191,11 +212,21 @@ Ext.define('Ext.ux.desktop.Desktop', {
         }
 
         /*** Languaje options ***/
-	    me.tileText = userStore.strings().findRecord("alias","tile").data.string;
-	   	me.cascadeText = userStore.strings().findRecord("alias","cascade").data.string;
+        me.tileText = userStore.strings().findRecord("alias","tile").data.string;
+        me.cascadeText = userStore.strings().findRecord("alias","cascade").data.string;
         ret.items.push(
-                { text:  me.tileText, handler: me.tileWindows, scope: me, minWindows: 1 },
-                { text:  me.cascadeText, handler: me.cascadeWindows, scope: me, minWindows: 1 })
+        {
+            text:  me.tileText, 
+            handler: me.tileWindows, 
+            scope: me, 
+            minWindows: 1
+        },
+        {
+            text:  me.cascadeText, 
+            handler: me.cascadeWindows, 
+            scope: me, 
+            minWindows: 1
+        })
 
         return ret;
     },
@@ -204,20 +235,35 @@ Ext.define('Ext.ux.desktop.Desktop', {
         var me = this;
 
         /*** Languaje options ***/
-	    me.restoreText = userStore.strings().findRecord("alias","restore").data.string;
-	    me.minimizeText = userStore.strings().findRecord("alias","minimize").data.string;	    
-	    me.maximizeText = userStore.strings().findRecord("alias","maximize").data.string;	    
-	    me.closeText = userStore.strings().findRecord("alias","close").data.string;	    
-
+        me.restoreText = userStore.strings().findRecord("alias","restore").data.string;
+        me.minimizeText = userStore.strings().findRecord("alias","minimize").data.string;	    
+        me.maximizeText = userStore.strings().findRecord("alias","maximize").data.string;	    
+        me.closeText = userStore.strings().findRecord("alias","close").data.string;	    
 
         return {
             defaultAlign: 'br-tr',
             items: [
-                { text: me.restoreText, handler: me.onWindowMenuRestore, scope: me },
-                { text: me.minimizeText, handler: me.onWindowMenuMinimize, scope: me },
-                { text: me.maximizeText, handler: me.onWindowMenuMaximize, scope: me },
-                '-',
-                { text: me.closeText, handler: me.onWindowMenuClose, scope: me }
+            {
+                text: me.restoreText, 
+                handler: me.onWindowMenuRestore, 
+                scope: me
+            },
+            {
+                text: me.minimizeText, 
+                handler: me.onWindowMenuMinimize, 
+                scope: me
+            },
+            {
+                text: me.maximizeText, 
+                handler: me.onWindowMenuMaximize, 
+                scope: me
+            },
+            '-',
+            {
+                text: me.closeText, 
+                handler: me.onWindowMenuClose, 
+                scope: me
+            }
             ],
             listeners: {
                 beforeshow: me.onWindowMenuBeforeShow,
@@ -251,12 +297,11 @@ Ext.define('Ext.ux.desktop.Desktop', {
 
     onShortcutItemClick: function (dataView, record) {
         var me = this, module = me.app.getModule(record.data.module),
-            win = module && module.createWindow();
+        win = module && module.createWindow();
 
         if (win) {
             me.restoreWindow(win);
         }
-        
     },
 
     onWindowClose: function(win) {
@@ -278,6 +323,7 @@ Ext.define('Ext.ux.desktop.Desktop', {
 
     onWindowMenuClose: function () {
         var me = this, win = me.windowMenu.theWin;
+
         win.close();
     },
 
@@ -289,6 +335,7 @@ Ext.define('Ext.ux.desktop.Desktop', {
         var me = this, win = me.windowMenu.theWin;
 
         win.maximize();
+        win.toFront();
     },
 
     onWindowMenuMinimize: function () {
@@ -312,8 +359,8 @@ Ext.define('Ext.ux.desktop.Desktop', {
 
     setTickSize: function(xTickSize, yTickSize) {
         var me = this,
-            xt = me.xTickSize = xTickSize,
-            yt = me.yTickSize = (arguments.length > 1) ? yTickSize : xt;
+        xt = me.xTickSize = xTickSize,
+        yt = me.yTickSize = (arguments.length > 1) ? yTickSize : xt;
 
         me.windows.each(function(win) {
             var dd = win.dd, resizer = win.resizer;
@@ -334,7 +381,7 @@ Ext.define('Ext.ux.desktop.Desktop', {
 
     cascadeWindows: function() {
         var x = 0, y = 0,
-            zmgr = this.getDesktopZIndexManager();
+        zmgr = this.getDesktopZIndexManager();
 
         zmgr.eachBottomUp(function(win) {
             if (win.isWindow && win.isVisible() && !win.maximized) {
@@ -346,15 +393,18 @@ Ext.define('Ext.ux.desktop.Desktop', {
     },
 
     createWindow: function(config, cls) {
-        
         var me = this, win, cfg = Ext.applyIf(config || {}, {
-                stateful: false,
-                isWindow: true,
-                constrainHeader: true,
-                minimizable: true,
-                maximizable: true
-            });
-		me.notification("Executando",config.title);
+            stateful: false,
+            isWindow: true,
+            constrainHeader: true,
+            minimizable: true,
+            maximizable: true
+        });
+	
+        /*** Languaje options ***/
+        me.loading = userStore.strings().findRecord("alias","loading").data.string;  
+
+         me.notification(me.loading, config.title,config.iconCls); 
                         
         cls = cls || Ext.window.Window;
         win = me.add(new cls(cfg));
@@ -374,7 +424,7 @@ Ext.define('Ext.ux.desktop.Desktop', {
         });
 
         win.on({
-            afterrender: function () {
+            boxready: function () {
                 win.dd.xTickSize = me.xTickSize;
                 win.dd.yTickSize = me.yTickSize;
 
@@ -398,14 +448,14 @@ Ext.define('Ext.ux.desktop.Desktop', {
                 }
             });
         };
-		//console.log(config);
-		
+        //console.log(config);
+
         return win;
     },
 
     getActiveWindow: function () {
         var win = null,
-            zmgr = this.getDesktopZIndexManager();
+        zmgr = this.getDesktopZIndexManager();
 
         if (zmgr) {
             // We cannot rely on activate/deactive because that fires against non-Window
@@ -496,25 +546,24 @@ Ext.define('Ext.ux.desktop.Desktop', {
         me.taskbar.setActiveButton(activeWindow && activeWindow.taskButton);
     },
 
-	createBox : function(t, s){
-	   return '<div class="msg"><h3>' + t + '</h3><p>' + s + '</p></div>';
-	},
+    createBox : function(t, s){
+        return '<div class="msg"><h3>' + t + '</h3><p>' + s + '</p></div>';
+    },
 	
-	notification:function(title,msg){
-		//*** some problems in two notifications at the same time...:( need fix it;
-		//*** disable y enable desk is a dirty way to prevent two clicks in a shortcut
-		//Ext.getCmp('id_shortcut_dataview').disable();   //***<-- dirty way
-
-        if(!this.msgCt){
-            this.msgCt = Ext.core.DomHelper.insertFirst(document.body, {id:'msg-div'}, true);
-        }
-        //var s = Ext.String.format.apply(String, Array.prototype.slice.call(arguments, 1));
-        var m = Ext.core.DomHelper.append(this.msgCt, this.createBox(title, msg), true);
-		m.hide();
-		m.slideIn('b').ghost("b", { delay: 600, remove: true,callback:function(){
-			//Ext.getCmp('id_shortcut_dataview').enable(); //***<-- dirty way
-		}});
-			  
-	}
+    notification:function(title,msg,ico){
+ 
+    	//Notification
+    	Ext.create('widget.uxNotification', {
+			title: title,
+			position: 'br',
+			//manager: 'demo1',
+			cls: 'ux-notification-light',
+			autoCloseDelay: 4500,
+			spacing: 20,
+			html: msg,
+            iconH: ico, 
+		}).show();
+    	
+}
 	
 });

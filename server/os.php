@@ -24,6 +24,7 @@ class os {
         $this->load($this->incPath . 'class.security.php', 'Settings', true);
         $this->load($this->incPath . 'class.user.php', 'security', true);
         $this->load($this->incPath . 'class.modules.php', 'security', true);
+        $this->load($this->incPath . 'class.log.php', 'log', true);
 
         /*         * * Load in SESSION var ** */
         $this->iniConfig = new configFile();
@@ -56,20 +57,44 @@ class os {
 
         if ($res["success"]) {
 
-            //check the action we need	
+            //check the action we need
             //$this->debug->log($_GET);
 
-            switch ($_GET["Module"]) {
+            $Module = null;
+            $option = null;
+            $action = null;
+            
+            if (isset($_GET["Module"])) { 
+                $Module = $_GET["Module"]; 
+            }
+            if (isset($_GET["option"])) { 
+                $option = $_GET["option"]; 
+            }
+            if (isset($_GET["action"])) { 
+                $action = $_GET["action"]; 
+            }
+            
+            if (isset($_POST["Module"])) { 
+                $Module = $_POST["Module"]; 
+            }
+            if (isset($_POST["option"])) { 
+                $option = $_POST["option"]; 
+            }
+            if (isset($_POST["action"])) { 
+                $action = $_POST["action"]; 
+            }
+            
+            switch ($Module) {
 
                 case "Main" :
-                    switch ($_GET["action"]) {
+					if ($action=="load_user/") { $action="load_user";}	//TODO: dirty fix in update to ext js4
+
+                    switch ($action) {
                         case "load_user":
                             // we get the languaje strings
                             $languaje = json_encode($this->lang["languaje"]);
-
                             // send a ok signal
-                            $json = '{	"success" : true, "login": true,';
-
+                            $json = '{"success" : true, "login": true,';
                             // we print user data
                             $json = $json . '"user" : [{' . $sec->print_user();
                             $json = $json . '"strings":' . $languaje . ",";
@@ -81,21 +106,20 @@ class os {
                     }//<--end case action
                     break;
                 default:
+                   
                     //first check the user permisión
                     //this is a generic function
                     $modules = new modules;
                     $permision = $modules->checkPermision();
-
                     //KILL THIS FUCKING LINE IS JUST TO TEST
                     //$permision=1;
                     //$this->debug->log(var_dump($permision));
                     if ($permision == 1) {
-
-                        switch ($_GET['Module']) {
+                        switch ($Module) {
                             case 'Settings':
-                                switch ($_GET['option']) {
+                                switch ($option) {
                                     case 'Wallpaper':
-                                        if ($_GET['action'] = "save") {
+                                        if ($action = "save") {
                                             $isSet = $modules->saveWallpaper();
                                             if (!$isSet) {
                                                 echo '{success:false, msg:"No se realizaron los cambios en el servidor"}';
@@ -105,7 +129,7 @@ class os {
                                         }
                                         break;
                                     case "Shortcuts":
-                                        if ($_GET['action'] = "save") {
+                                        if ($action = "save") {
                                             $isSet = $modules->saveShortcuts();
                                             if (!$isSet) {
                                                 echo '{success:false, msg:"No se realizaron los cambios en el servidor"}';
@@ -115,7 +139,7 @@ class os {
                                         }
                                         break;
                                     case "QLaunchs":
-                                        if ($_GET['action'] = "save") {
+                                        if ($action = "save") {
                                             $isSet = $modules->saveQLaunchs();
                                             if (!$isSet) {
                                                 echo '{success:false, msg:"No se realizaron los cambios en el servidor"}';
@@ -125,7 +149,7 @@ class os {
                                         }
                                         break;
                                     case 'Theme':
-                                        if ($_GET['action'] = "save") {
+                                        if ($action = "save") {
                                             $isSet = $modules->saveTheme();
                                             if (!$isSet) {
                                                 echo '{success:false, msg:"No se realizaron los cambios en el servidor"}';
@@ -137,15 +161,13 @@ class os {
                                 }//<--end case option
                                 break;
                             default:
-
                                 // if we have access,
                                 // 1.- Load the class, we create the path for you
                                 // 2.- We inicialize the class for you
                                 // 3.- We call the method for you...
-
-                                $Module = $_GET["Module"];
-                                $option = $_GET["option"];
-                                $action = $_GET["action"];
+                                //$Module = $Module;
+                                //$option = $option;
+                                //$action = $action;
                                 $lower = strtolower($Module);
                                 $Path = "modules/$Module/Server/$Module.php";
 
@@ -177,10 +199,9 @@ class os {
             // we are not logged
             // just send de languaje strings...
             $languaje = json_encode($this->lang["languaje"]);
-            $json = '{	"success" : false, "login": false,';
+            $json = '{"success" : false, "login": false,';
             $json = $json . '"user" : [{';
             $json = $json . '"strings":' . $languaje . "}]}";
-
             //OutPut Json
             echo $json;
         }//<-- end if ($res["success"])

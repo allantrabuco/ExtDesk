@@ -1,0 +1,23 @@
+.ux-notification-window .x-window-body {
+	text-align: center;
+	padding: 15px 50px 15px 50px;
+	width: 200px;
+}
+
+.ux-notification-light .x-window-header {
+	background-color: transparent;
+	padding-left: 17px;
+	background-repeat: no-repeat;
+}
+
+body .ux-notification-light {
+	background-image: url('images/fader.png');
+}
+
+.ux-notification-light .x-window-body {
+	text-align: center;
+	padding: 15px 5px 18px 5px;
+	width: 200px;
+	background-color: transparent;
+	border: 0px solid white;
+}
